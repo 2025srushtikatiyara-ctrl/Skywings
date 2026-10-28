@@ -1,6 +1,6 @@
 {
   "name": "SKY WINGS Airline Reservation System",
-  "description": "Enterprise-grade airline reservation platform with real-time flight booking and an integrated PostgreSQL SQL Workbench.",
+  "description": "Airline reservation platform with flight booking and an integrated in-browser Local SQL Workbench.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

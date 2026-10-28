@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 AIRLINE
               </span>
             </div>
-            <p className="text-[11px] font-medium text-slate-400">PostgreSQL Reservation System</p>
+            <p className="text-[11px] font-medium text-slate-400">Airline Reservation & SQL Workbench</p>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`} />
             </span>
             <span className="text-[11px] font-medium text-slate-300">
-              {isSynced ? 'Live Sync Active' : 'Connecting...'}
+              {isSynced ? 'Engine: Ready' : 'Initializing...'}
             </span>
             <span className="text-[10px] text-slate-500 font-mono">
               {lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

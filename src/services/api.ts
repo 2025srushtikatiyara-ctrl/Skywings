@@ -1,8 +1,11 @@
 /**
- * API Service Client for SKY WINGS
- * Dispatches requests to /api endpoints with structured error handling.
+ * Direct In-Browser Database Client for SKY WINGS
+ * Operates entirely client-side on local simulated relational data.
+ * Zero external HTTP dependencies, full offline/static hosting readiness,
+ * and persistent storage backed by localStorage.
  */
 
+import { browserDb } from '../lib/engine/database';
 import {
   Flight,
   Passenger,
@@ -15,18 +18,17 @@ import {
   DatabaseStatus,
 } from '../types';
 
-const BASE_URL = '/api';
-
 export async function fetchHealth() {
-  const res = await fetch(`${BASE_URL}/health`);
-  return res.json();
+  return {
+    status: 'HEALTHY',
+    engine: 'SKY WINGS Browser SQL Engine',
+    storage: 'localStorage',
+    timestamp: new Date().toISOString(),
+  };
 }
 
 export async function fetchFlights(): Promise<Flight[]> {
-  const res = await fetch(`${BASE_URL}/flights`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to fetch flights');
-  return data.flights;
+  return browserDb.getFlights();
 }
 
 export async function searchFlights(params: {
@@ -35,38 +37,15 @@ export async function searchFlights(params: {
   date?: string;
   seats?: number;
 }): Promise<Flight[]> {
-  const query = new URLSearchParams();
-  if (params.source) query.set('source', params.source);
-  if (params.destination) query.set('destination', params.destination);
-  if (params.date) query.set('date', params.date);
-  if (params.seats) query.set('seats', params.seats.toString());
-
-  const res = await fetch(`${BASE_URL}/flights/search?${query.toString()}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Search failed');
-  return data.flights;
+  return browserDb.searchFlights(params);
 }
 
 export async function createFlight(flightData: any): Promise<Flight> {
-  const res = await fetch(`${BASE_URL}/flights`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(flightData),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to create flight');
-  return data.flight;
+  return browserDb.createFlight(flightData);
 }
 
 export async function updateFlight(id: number, flightData: any): Promise<Flight> {
-  const res = await fetch(`${BASE_URL}/flights/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(flightData),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to update flight');
-  return data.flight;
+  return browserDb.updateFlight(id, flightData);
 }
 
 export async function createBooking(bookingData: {
@@ -76,49 +55,29 @@ export async function createBooking(bookingData: {
   email: string;
   phone?: string;
 }): Promise<Booking> {
-  const res = await fetch(`${BASE_URL}/bookings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(bookingData),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Booking submission failed');
-  return data.booking;
+  return browserDb.createBooking(bookingData) as any;
 }
 
 export async function fetchBookings(): Promise<Booking[]> {
-  const res = await fetch(`${BASE_URL}/bookings`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to fetch bookings');
-  return data.bookings;
+  return browserDb.getBookings();
 }
 
 export async function lookupBookings(params: {
   email?: string;
   reference?: string;
 }): Promise<Booking[]> {
-  const query = new URLSearchParams();
-  if (params.email) query.set('email', params.email);
-  if (params.reference) query.set('reference', params.reference);
-
-  const res = await fetch(`${BASE_URL}/bookings/lookup?${query.toString()}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Booking lookup failed');
-  return data.bookings;
+  return browserDb.lookupBookings(params);
 }
 
 export async function cancelBooking(
   bookingId: number,
   email?: string
 ): Promise<{ success: boolean; message: string; refundAmount: number; seatsRestored: number }> {
-  const res = await fetch(`${BASE_URL}/bookings/${bookingId}/cancel`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Cancellation failed');
-  return data;
+  const res = browserDb.cancelBooking(bookingId, email);
+  return {
+    ...res,
+    message: 'Booking cancelled successfully and seats restored to flight inventory.',
+  };
 }
 
 export async function fetchDashboardMetrics(): Promise<{
@@ -126,84 +85,71 @@ export async function fetchDashboardMetrics(): Promise<{
   recentBookings: any[];
   dataSource: string;
 }> {
-  const res = await fetch(`${BASE_URL}/admin/dashboard`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to fetch dashboard metrics');
-  return data;
+  const metrics = browserDb.getDashboardMetrics();
+  const bookings = browserDb.getBookings();
+  return {
+    metrics,
+    recentBookings: bookings.slice(0, 5),
+    dataSource: 'Local In-Browser Engine',
+  };
 }
 
 export async function fetchPassengers(search?: string): Promise<Passenger[]> {
-  const query = search ? `?search=${encodeURIComponent(search)}` : '';
-  const res = await fetch(`${BASE_URL}/admin/passengers${query}`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to fetch passengers');
-  return data.passengers;
+  let list = browserDb.getPassengers();
+  if (search && search.trim()) {
+    const q = search.trim().toLowerCase();
+    list = list.filter(
+      (p) =>
+        p.full_name?.toLowerCase().includes(q) ||
+        p.email?.toLowerCase().includes(q) ||
+        p.phone?.toLowerCase().includes(q)
+    );
+  }
+  return list;
 }
 
 export async function fetchSchemaMetadata(): Promise<{
   databaseName: string;
   tables: TableMeta[];
 }> {
-  const res = await fetch(`${BASE_URL}/admin/schema`);
-  const data = await res.json();
-  if (!data.success) throw new Error(data.message || 'Failed to fetch schema metadata');
-  return data;
+  return browserDb.getSchemaMetadata();
 }
 
 export async function executeSql(sql: string) {
-  const res = await fetch(`${BASE_URL}/admin/sql/execute`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql }),
-  });
-  return res.json();
+  return browserDb.execute(sql);
 }
 
 export async function explainSql(sql: string, analyze: boolean = false) {
-  const res = await fetch(`${BASE_URL}/admin/sql/explain`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sql, analyze }),
-  });
-  return res.json();
+  return browserDb.explain(sql, analyze);
 }
 
 export async function fetchQueryHistory(): Promise<QueryHistoryItem[]> {
-  const res = await fetch(`${BASE_URL}/admin/sql/history`);
-  const data = await res.json();
-  return data.history || [];
+  return browserDb.getQueryHistory();
 }
 
 export async function fetchSavedQueries(): Promise<SavedQuery[]> {
-  const res = await fetch(`${BASE_URL}/admin/sql/saved`);
-  const data = await res.json();
-  return data.savedQueries || [];
+  return browserDb.getSavedQueries();
 }
 
 export async function saveQuery(name: string, sql_text: string, description?: string) {
-  const res = await fetch(`${BASE_URL}/admin/sql/saved`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, sql_text, description }),
-  });
-  return res.json();
+  const query = browserDb.saveQuery(name, sql_text, description);
+  return { success: true, query };
 }
 
 export async function deleteSavedQuery(id: number) {
-  const res = await fetch(`${BASE_URL}/admin/sql/saved/${id}`, {
-    method: 'DELETE',
-  });
-  return res.json();
+  const success = browserDb.deleteSavedQuery(id);
+  return { success };
 }
 
 export async function fetchAuditLogs(): Promise<AuditLogItem[]> {
-  const res = await fetch(`${BASE_URL}/admin/audit`);
-  const data = await res.json();
-  return data.auditLogs || [];
+  return browserDb.getAuditLogs();
 }
 
 export async function fetchDbStatus(): Promise<DatabaseStatus> {
-  const res = await fetch(`${BASE_URL}/admin/db-status`);
-  const data = await res.json();
-  return data.status;
+  return browserDb.getDbStatus();
+}
+
+export async function resetDatabase(): Promise<{ success: boolean; message: string }> {
+  browserDb.resetToSeedData(true);
+  return { success: true, message: 'Database reset to canonical initial state.' };
 }

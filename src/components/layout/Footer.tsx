@@ -1,6 +1,6 @@
 /**
  * SKY WINGS Application Footer
- * Features system status, architecture notices, and database preservation guarantees.
+ * Features truthful system status, browser-based SQL engine architecture, and reactive guarantees.
  */
 
 import React from 'react';
@@ -14,11 +14,10 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="font-semibold text-slate-200 mb-2 flex items-center gap-2">
               <Database className="h-4 w-4 text-blue-400" />
-              Target Database
+              Database Engine
             </h4>
             <p className="text-slate-400 leading-relaxed text-[11px]">
-              PostgreSQL 18 instance (<code className="text-cyan-400 font-mono">airline_reservation</code>).
-              Existing tables, sample records, sequences, and constraints are strictly preserved.
+              SKY WINGS In-Browser SQL Engine with persistent relational tables (<code className="text-cyan-400 font-mono">flights</code>, <code className="text-cyan-400 font-mono">passengers</code>, <code className="text-cyan-400 font-mono">bookings</code>).
             </p>
           </div>
 
@@ -28,19 +27,17 @@ export const Footer: React.FC = () => {
               Transaction Safety
             </h4>
             <p className="text-slate-400 leading-relaxed text-[11px]">
-              Concurrent reservations locked via <code className="text-slate-200 font-mono">SELECT ... FOR UPDATE</code>.
-              Seat inventory adjustments and cancellations execute in atomic transactions.
+              Atomic booking creation, seat availability checks, and inventory restorations with instant rollback on conflicts.
             </p>
           </div>
 
           <div>
             <h4 className="font-semibold text-slate-200 mb-2 flex items-center gap-2">
               <Cpu className="h-4 w-4 text-cyan-400" />
-              Real-Time Invalidation
+              Reactive Invalidation
             </h4>
             <p className="text-slate-400 leading-relaxed text-[11px]">
-              Server-Sent Events (SSE) stream table change events across connected clients.
-              Mutations executed in SQL Workbench immediately refresh open views.
+              Reactive event subscription stream. Mutations executed in the SQL Workbench immediately refresh all cards, search results, and charts.
             </p>
           </div>
 
@@ -50,20 +47,19 @@ export const Footer: React.FC = () => {
               SQL Workbench Policy
             </h4>
             <p className="text-slate-400 leading-relaxed text-[11px]">
-              Server-side classification enforces read-only sandboxing, warns on unconstrained mutations,
-              and audits all privileged operations with millisecond precision.
+              Lexical tokenizer, AST parser, and evaluator supporting SELECT, JOIN, AGGREGATE, INSERT, UPDATE, DELETE, and schema inspection.
             </p>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-900 pt-6 text-[11px] text-slate-500">
-          <p>© 2026 SKY WINGS Airline Systems. Enterprise-Grade Architecture.</p>
-          <div className="flex items-center gap-4 mt-2 sm:mt-0 font-mono">
-            <span>PGHOST: localhost:5432</span>
+          <p>© 2026 SKY WINGS Airline Systems. In-Browser SQL Workbench & Reservation System.</p>
+          <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0 font-mono text-[10px]">
+            <span>Storage: <strong className="text-slate-300">Current Browser (localStorage)</strong></span>
             <span>•</span>
-            <span>PGDATABASE: airline_reservation</span>
+            <span>Engine: <strong className="text-cyan-400">Browser SQL Engine</strong></span>
             <span>•</span>
-            <span className="text-emerald-400">SSE Active</span>
+            <span className="text-emerald-400">Status: Ready</span>
           </div>
         </div>
       </div>

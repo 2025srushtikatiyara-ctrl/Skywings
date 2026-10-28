@@ -109,19 +109,23 @@ export default function App() {
       setRecentBookings(mData.recentBookings || []);
       setAuditLogs(aData);
       setDbStatus(dbStat);
+
+      if (searchParams) {
+        const updatedResults = await searchFlights(searchParams);
+        setSearchResults(updatedResults);
+      }
     } catch (err) {
       console.error('Error fetching application state:', err);
     }
-  }, [passengerSearch]);
+  }, [passengerSearch, searchParams]);
 
   useEffect(() => {
     loadAllData();
   }, [loadAllData]);
 
-  // Hook into Server-Sent Events (SSE) from /api/admin/events
+  // Hook into local database change events
   const handleLiveEvent = useCallback((event: DbChangeEvent) => {
-    const tableCapitalized = event.table.charAt(0).toUpperCase() + event.table.slice(1);
-    const msg = `⚡ PostgreSQL Invalidation: Table '${event.table}' updated via ${event.action} — Views synchronized!`;
+    const msg = `⚡ Local SQL Invalidation: Table '${event.table}' updated via ${event.action} — Views synchronized!`;
     setSyncToast({ message: msg, table: event.table });
     setTimeout(() => setSyncToast(null), 4500);
 
@@ -173,7 +177,7 @@ export default function App() {
             <Zap className="h-4 w-4 animate-pulse" />
           </span>
           <div>
-            <div className="text-xs font-bold text-white">PostgreSQL 18 Event Received</div>
+            <div className="text-xs font-bold text-white">Local SQL Engine Event</div>
             <div className="text-[11px] text-cyan-300 font-mono">{syncToast.message}</div>
           </div>
           <button onClick={() => setSyncToast(null)} className="text-slate-500 hover:text-white ml-2">

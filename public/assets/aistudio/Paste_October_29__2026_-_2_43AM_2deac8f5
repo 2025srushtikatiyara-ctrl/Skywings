@@ -1,0 +1,751 @@
+# MASTER ENGINEERING PROMPT
+# SKY WINGS — Airline Reservation System with an In-Browser SQL Workbench and Live Frontend Data Engine
+
+## 1. YOUR ROLE AND ENGINEERING STANDARD
+
+Act as a principal software architect, senior full-stack engineer, frontend systems engineer, database specialist, SQL language implementation engineer, UI/UX designer, security engineer, and quality-assurance lead with more than 25 years of professional engineering experience.
+
+You are modifying my EXISTING SKY WINGS Airline Reservation System project in Google AI Studio.
+
+Work to a professional engineering standard: deliberate architecture, predictable behavior, robust error handling, maintainable code, precise state management, accessible UI, consistent design, and thoroughly verified functionality.
+
+Do not provide merely a conceptual solution, a tutorial, a list of suggestions, or disconnected sample code. Inspect the existing application and implement the requested functionality directly in the current project.
+
+Use the capabilities available in the current Google AI Studio environment. Do not claim to have executed commands, inspected files, run tests, or verified deployment behavior unless you actually have.
+
+## 2. EXISTING PROJECT CONTEXT
+
+The project is called:
+
+SKY WINGS — Airline Reservation System
+
+The application already has an airline reservation interface with:
+- SKY WINGS branding and logo.
+- A dark navy interface with blue and cyan accents.
+- Book Flight navigation.
+- My Bookings navigation.
+- Admin Center navigation.
+- SQL Workbench navigation.
+- Docs & DB navigation.
+- Flight origin and destination selectors.
+- Departure-date selection.
+- Passenger selection.
+- Flight search.
+- Flight cards with airline, flight number, departure time, arrival time, route, duration, fare, and availability information.
+- A PostgreSQL-inspired SQL Workbench interface.
+- A Schema Explorer.
+- A SQL editor.
+- A query execution button.
+- A results grid.
+- Query Plan and Execution History panels.
+- Existing project files and frontend application logic that must be preserved and improved.
+
+The existing deployed frontend has been available at:
+
+https://skywingsdbms.netlify.app
+
+Treat this as the known deployment address, not proof that every current project version is deployed there.
+
+The local Windows project folder has been:
+
+C:\Users\srush\OneDrive\Desktop\skywings
+
+The repository may be inside a nested folder such as Skywings-main. Inspect the actual project structure rather than assuming the folder layout.
+
+The current application preview has displayed database-style metadata such as:
+- Database: airline_reservation
+- Host: localhost:5432
+- Role: postgres
+
+The SQL Workbench has displayed an error similar to:
+
+PostgreSQL Execution Error:
+Unexpected end of JSON input
+
+The connection status has also remained at Connecting, and the Schema Explorer has appeared empty.
+
+These symptoms must be addressed by replacing misleading server-database assumptions with a working browser-only SQL engine, not by attempting to establish a PostgreSQL connection.
+
+## 3. NON-NEGOTIABLE ARCHITECTURAL DECISION
+
+I DO NOT WANT:
+- A PostgreSQL connection.
+- A Node.js backend.
+- An Express server.
+- A database server.
+- A server-side SQL execution API.
+- A Netlify Functions database integration.
+- An external hosted database.
+- A connection to localhost:5432.
+- Database credentials or connection strings.
+- An infrastructure migration.
+- A newly generated, disconnected demo application.
+
+The entire requested SQL execution feature must work in the browser.
+
+The SQL engine must operate on the application's local simulated relational data. SQL statements must genuinely query and mutate that data, and successful mutations must update the existing website immediately.
+
+Do not waste implementation effort attempting to repair a real PostgreSQL connection. Remove that dependency from the SQL Workbench's execution path.
+
+Keep the existing frontend application architecture wherever practical. Reuse its framework, components, styles, routes, and existing data structures.
+
+If the project currently contains backend-oriented code, do not blindly delete unrelated files. Isolate the SQL Workbench from the backend and PostgreSQL assumptions without breaking the rest of the project.
+
+## 4. FIRST ACTION: INSPECT THE EXISTING PROJECT
+
+Before editing files, inspect the available repository and determine:
+
+1. The frontend framework and version.
+2. The application entry point.
+3. The routing system.
+4. The current state-management approach.
+5. The existing SQL Workbench component.
+6. The existing flight data structures.
+7. The flight search and filtering implementation.
+8. The flight card and availability components.
+9. The booking and admin interfaces.
+10. The current persistence mechanism, if any.
+11. The package manager and package scripts.
+12. The existing test setup.
+13. The existing deployment configuration.
+
+Use the actual source files as the source of truth.
+
+Do not assume that React, TypeScript, Vite, or any specific package is present until you inspect the project.
+
+Preserve working functionality. Avoid replacing the complete application with a newly designed but disconnected interface.
+
+If a required source file is unavailable to you, clearly state that limitation and proceed only with changes supported by the files you can inspect.
+
+## 5. PRIMARY OBJECTIVE
+
+Transform the existing SQL Workbench into a professional, interactive, browser-based SQL IDE that controls the simulated data displayed throughout SKY WINGS.
+
+The desired experience is:
+
+1. Open SKY WINGS.
+2. Navigate to SQL Workbench.
+3. See the existing simulated tables and their records.
+4. Enter a SQL query.
+5. Execute it.
+6. View actual results computed by the local SQL engine.
+7. Modify a record using SQL.
+8. See the corresponding flight card, fare, availability indicator, or table update immediately.
+9. Refresh the browser and retain saved changes where local storage permits.
+10. Reset the demo dataset explicitly when needed.
+
+This must be a functional data engine, not a decorative SQL editor with hardcoded result messages.
+
+## 6. IMPLEMENT A REAL, LIMITED SQL EXECUTION ENGINE
+
+Create a modular browser-side relational engine.
+
+Prefer TypeScript if the existing project already supports it. Otherwise, use the project's current language and conventions.
+
+Separate the implementation into logical modules, such as:
+
+- SQL tokenizer.
+- SQL parser.
+- SQL statement validation.
+- Query execution engine.
+- Relational data store.
+- Schema and constraint manager.
+- Persistence adapter.
+- Query history manager.
+- SQL Workbench UI.
+- Shared application state integration.
+- Unit tests.
+
+Use names and file locations that fit the existing repository rather than creating arbitrary duplicate application structures.
+
+### SQL parsing requirements
+
+Implement a proper tokenizer and parser for the supported SQL subset.
+
+Do not use eval, the Function constructor, arbitrary JavaScript evaluation, or unsafe string replacement to execute SQL.
+
+Do not simulate successful execution merely because a query contains a particular keyword.
+
+The engine must parse SQL, validate it against the schema, execute it against the actual in-browser data, and return real computed results.
+
+If a query uses unsupported syntax, return a clear, informative error instead of pretending it succeeded.
+
+### Minimum SQL support
+
+Implement and test the following features.
+
+A. SELECT statements:
+- SELECT *
+- Explicit column selection.
+- Column aliases using AS.
+- DISTINCT.
+- WHERE.
+- AND, OR, NOT.
+- Parenthesized boolean expressions.
+- Equality and comparison operators.
+- IN and NOT IN.
+- BETWEEN and NOT BETWEEN.
+- LIKE and NOT LIKE.
+- IS NULL and IS NOT NULL.
+- ORDER BY with ASC and DESC.
+- LIMIT and OFFSET.
+- Basic arithmetic expressions.
+- COUNT, SUM, AVG, MIN, and MAX.
+- GROUP BY.
+- HAVING.
+- INNER JOIN.
+- LEFT JOIN.
+- COUNT(DISTINCT column) if feasible.
+
+B. Data modification:
+- INSERT INTO ... VALUES.
+- INSERT INTO with explicit column lists.
+- UPDATE ... SET ... WHERE.
+- DELETE FROM ... WHERE.
+
+C. Schema operations:
+- SHOW TABLES.
+- DESCRIBE table_name.
+- CREATE TABLE for supported data types and constraints.
+- ALTER TABLE for explicitly implemented operations.
+- DROP TABLE with mandatory confirmation.
+
+D. Developer utilities:
+- A simplified EXPLAIN implementation that reports how the browser engine plans to process a query.
+- Clear errors for unsupported statements.
+- Optional multi-statement execution only if each statement can be processed safely and the execution semantics are documented.
+
+Do not claim full PostgreSQL compatibility. Clearly label the engine as a browser-based SQL subset.
+
+If transactions are implemented, use real snapshot-based commit and rollback semantics. Otherwise, explain that transaction support is not implemented.
+
+## 7. RELATIONAL DATA MODEL
+
+Initialize the local relational store using the existing application's data whenever possible.
+
+Inspect the actual data structures and reuse existing records instead of creating a completely unrelated dataset.
+
+If the existing application only has hardcoded flight cards, build a normalized relational representation from those records and connect it to the UI through an explicit mapping layer.
+
+Create sensible tables where the current application supports them, such as:
+
+- airlines
+- airports
+- flights
+- passengers
+- bookings
+- seats
+
+Additional tables may be added when they correspond to existing application functionality.
+
+Use consistent primary keys, column names, types, and relationships.
+
+For example, the flights table may contain fields such as:
+
+- flight_id
+- flight_number
+- airline_id
+- origin_airport_id
+- destination_airport_id
+- departure_time
+- arrival_time
+- duration_minutes
+- fare
+- available_seats
+- status
+
+These are illustrative fields. Inspect the current project and adapt them to the actual application model.
+
+Do not create duplicate representations that can drift out of synchronization.
+
+### Seed data
+
+Reuse the existing SKY WINGS demo flights and routes.
+
+If the application already displays sample routes such as Mumbai–Delhi, Mumbai–Bengaluru, and Delhi–Mumbai, preserve those routes and map them correctly into the relational store.
+
+Preserve existing flight identifiers and relevant fields whenever possible.
+
+If no suitable data exists, create a small, realistic, clearly identified demo dataset.
+
+Do not display seed data as verified real-world flight inventory.
+
+## 8. SINGLE SOURCE OF TRUTH AND LIVE UI SYNCHRONIZATION
+
+This is a critical requirement.
+
+The SQL engine and the existing airline interface must use the same centralized application data store.
+
+The application must not maintain one independent flight list for SQL queries and a different hardcoded flight list for the homepage.
+
+When SQL modifies the store, notify the application through its existing reactive state system.
+
+Use the current framework's state management, context, store, or subscription model where appropriate.
+
+Avoid unnecessary full-page reloads.
+
+### Required example 1: update a fare
+
+Execute:
+
+UPDATE flights
+SET fare = 5200
+WHERE flight_number = '6E-201';
+
+Expected behavior:
+- The SQL engine locates the matching record.
+- It validates the fare value.
+- It updates the shared data store.
+- The Results or Messages panel reports the affected-row count.
+- The corresponding flight card updates its fare immediately.
+- Any relevant fare summaries update.
+- The change persists locally if persistence is enabled.
+
+### Required example 2: update availability
+
+Execute:
+
+UPDATE flights
+SET available_seats = 20
+WHERE flight_number = '6E-201';
+
+Expected behavior:
+- The underlying record changes.
+- The flight card's availability display updates.
+- Flight search and availability filtering use the updated value.
+- Other views reading that record remain consistent.
+
+### Required example 3: query the data
+
+Execute:
+
+SELECT flight_number, fare, available_seats
+FROM flights
+ORDER BY fare ASC;
+
+Expected behavior:
+- The engine reads the shared relational store.
+- It sorts the records.
+- It returns real computed results.
+- The Results Grid renders the returned columns and rows.
+
+### Required example 4: insert a flight
+
+Execute an INSERT statement that conforms to the actual flights table schema.
+
+Expected behavior:
+- The statement is validated.
+- A new record is created.
+- The schema constraints are respected.
+- The corresponding flight appears in relevant lists when it satisfies the current filters.
+- The Schema Explorer's row count updates.
+
+### Required example 5: delete a record
+
+Execute a valid DELETE statement.
+
+Expected behavior:
+- The engine identifies the matching records.
+- It applies constraint checks.
+- The shared data store updates atomically.
+- Dependent UI views update safely.
+- The Messages panel reports the affected-row count.
+
+All of these operations must modify the underlying simulated data, not just the visible table.
+
+## 9. PROFESSIONAL SQL WORKBENCH DESIGN
+
+Keep the existing SKY WINGS visual identity.
+
+Use the existing dark navy background, blue/cyan accents, typography, borders, spacing, navigation, and card style.
+
+Do not introduce an unrelated design system or unnecessarily redesign the rest of the application.
+
+Improve the existing SQL Workbench with:
+
+### SQL editor
+- Syntax highlighting.
+- Line numbers.
+- Monospaced text.
+- Automatic indentation.
+- Clear error indicators where practical.
+- Basic keyword autocomplete.
+- Table and column suggestions from the current schema.
+- Format SQL.
+- Clear editor.
+- Run Query.
+- Run Selected Query.
+- Ctrl+Enter keyboard shortcut.
+- Useful keyboard focus behavior.
+
+Use an appropriate editor library only if compatible with the current project. Otherwise, build a reliable lightweight editor. Do not compromise application stability merely to add a large dependency.
+
+### Schema Explorer
+Display the actual in-browser schema.
+
+Support:
+- Table names.
+- Row counts.
+- Expandable table details.
+- Column names.
+- Data types.
+- Primary-key indicators.
+- Nullability.
+- Relationship information where implemented.
+- Refreshing the schema after CREATE TABLE, ALTER TABLE, DROP TABLE, INSERT, UPDATE, and DELETE operations.
+
+The Schema Explorer must not remain empty when the local data store contains tables.
+
+### Results Grid
+Display:
+- Column headers.
+- Correctly formatted cell values.
+- Sortable columns where practical.
+- Empty result sets.
+- Row counts.
+- Execution duration.
+- Affected-row counts.
+- Horizontal scrolling for wide tables.
+- Sensible handling of null values.
+- Copy-to-clipboard functionality.
+- CSV export.
+
+Prevent malformed query results from crashing the interface.
+
+### Messages panel
+Display:
+- Query succeeded.
+- Query failed.
+- Rows returned.
+- Rows affected.
+- Execution time.
+- Validation errors.
+- Unsupported syntax errors.
+- Constraint violations.
+- Persistence errors.
+
+Use meaningful messages rather than generic JSON parsing failures.
+
+### Additional developer tools
+Include:
+- Query history.
+- Saved queries.
+- SQL templates.
+- Example queries.
+- A simplified query plan.
+- Clear query history.
+- Clear results.
+- Explicit reset demo data.
+
+Store saved queries and query history locally when appropriate.
+
+## 10. REMOVE MISLEADING CONNECTION METADATA
+
+The current UI may show:
+
+- PostgreSQL 18 SQL Workbench.
+- Connected or Connecting.
+- Host: localhost:5432.
+- Database: airline_reservation.
+- Role: postgres.
+- Live PostgreSQL Inventory.
+
+These labels must not imply an actual PostgreSQL connection.
+
+Replace them with truthful interface labels such as:
+
+- SKY WINGS Local SQL Workbench.
+- Browser SQL Engine.
+- Database Mode: Local Simulation.
+- Storage: Current Browser.
+- Status: Ready.
+- SQL Compatibility: Supported Subset.
+
+Do not display a green connected indicator unless the local engine has successfully initialized.
+
+Do not display a server hostname or PostgreSQL role as though a server connection exists.
+
+Do not claim that the engine uses the actual PostgreSQL 18 installation.
+
+Preserve the overall appearance of the existing SQL Workbench while correcting its technical meaning.
+
+## 11. FIX THE EXISTING ERROR HANDLING
+
+The currently observed error is:
+
+Unexpected end of JSON input
+
+The frontend may currently expect an API response from a server that is not available.
+
+Inspect the current SQL Workbench's query execution path.
+
+Remove its dependency on the PostgreSQL API for browser-side SQL execution.
+
+Route supported SQL statements directly to the local SQL engine.
+
+Ensure that the application does not:
+- Send SQL queries to localhost:5432.
+- Wait indefinitely for a nonexistent backend.
+- Parse an empty network response.
+- Show stale results as though a query succeeded.
+- Display fake connection success.
+- Silently ignore SQL errors.
+
+If any unrelated network functionality remains in the project, handle its failures independently without blocking the local SQL engine.
+
+The SQL Workbench should initialize and operate without a database server.
+
+## 12. DATA PERSISTENCE
+
+Implement local persistence using IndexedDB where appropriate, or a suitable browser-local alternative consistent with the project.
+
+Requirements:
+- Save successful SQL mutations.
+- Restore the local data after a browser refresh.
+- Persist saved queries and query history.
+- Handle storage initialization and migration between local schema versions.
+- Handle unavailable storage and quota errors gracefully.
+- Avoid corrupting the previous saved state if a write fails.
+- Provide an explicit Reset Demo Data operation.
+- Ask for confirmation before resetting data.
+- Keep a clear distinction between resettable demo data and the current locally saved state.
+
+Use atomic updates or snapshots so that failed SQL statements do not partially modify records.
+
+Where possible, preserve the previous valid state if persistence fails.
+
+Do not put credentials, payment secrets, or real sensitive passenger information in browser storage.
+
+If the browser storage is cleared, explain that locally saved data may be lost.
+
+## 13. SAFETY AND DATA INTEGRITY
+
+This is a local developer simulation, not a production airline database.
+
+Nevertheless, implement predictable, safe behavior.
+
+- Never use eval or the Function constructor to interpret SQL.
+- Parse and validate every supported statement.
+- Reject unsupported SQL.
+- Validate data types.
+- Enforce implemented primary-key and foreign-key constraints.
+- Respect NOT NULL and UNIQUE constraints when supported.
+- Validate INSERT and UPDATE values.
+- Avoid partial mutation on statement failure.
+- Warn before UPDATE or DELETE statements without WHERE clauses.
+- Require explicit confirmation before DROP TABLE.
+- Confirm reset operations.
+- Provide undo for recent mutations where practical.
+- Ensure invalid SQL does not change data.
+- Prevent the editor from executing arbitrary JavaScript or browser commands.
+- Never present the simulated data as production airline inventory.
+
+## 14. PRESERVE THE AIRLINE APPLICATION
+
+The SQL Workbench is an extension of the existing project, not a replacement for the airline website.
+
+Preserve and, where already implemented, keep functional:
+
+- Flight search.
+- Origin and destination selectors.
+- Date selection.
+- Passenger selection.
+- Flight listings.
+- Fare display.
+- Availability indicators.
+- My Bookings.
+- Passenger details.
+- Booking and reservation flow.
+- Seat selection.
+- PNR generation.
+- Cancellation.
+- Admin Center.
+- Docs & DB.
+- Existing navigation and responsive layouts.
+
+Where these screens currently use frontend sample data, connect them to the shared browser-side store when appropriate.
+
+Do not invent the appearance of a successful real booking or actual airline reservation.
+
+Clearly treat reservations and PNRs as simulated demo data.
+
+Ensure that updates from the SQL Workbench propagate to the affected components without breaking existing interactions.
+
+## 15. TESTING REQUIREMENTS
+
+Inspect the existing test setup and add tests compatible with the project.
+
+Test the tokenizer and parser, execution engine, schema manager, state store, persistence layer, and UI integration.
+
+At minimum, test:
+
+1. SELECT returns the correct rows.
+2. WHERE filters records correctly.
+3. ORDER BY sorts correctly.
+4. LIMIT and OFFSET work.
+5. Aggregate functions return correct values.
+6. GROUP BY and HAVING work for supported expressions.
+7. INNER JOIN and LEFT JOIN work for supported conditions.
+8. INSERT creates a valid record.
+9. UPDATE changes the correct records.
+10. DELETE removes only matching records.
+11. Primary-key and foreign-key constraints are respected where implemented.
+12. Invalid SQL returns a useful error.
+13. Unsupported SQL is rejected.
+14. A failed statement leaves the data unchanged.
+15. UPDATE without WHERE produces a warning.
+16. DROP TABLE requires confirmation.
+17. Schema Explorer updates after schema mutations.
+18. The flight card updates immediately after a fare change.
+19. Availability indicators update after an availability change.
+20. Saved data survives a page refresh.
+21. Reset Demo Data restores the initial seed state after confirmation.
+22. The engine works without a PostgreSQL server or backend API.
+23. An empty query result does not produce a JSON parsing error.
+24. Repeated operations do not create duplicate or stale UI state.
+
+Run the available tests if the environment supports execution.
+
+Clearly distinguish implemented tests from tests actually executed. Never claim that every test passes without verification.
+
+## 16. PERFORMANCE AND MAINTAINABILITY
+
+Use a clean, modular design.
+
+Avoid:
+- A single enormous component containing the entire SQL engine.
+- Duplicated application data.
+- Repeated full-store serialization for every small operation where avoidable.
+- Unsafe parsing shortcuts.
+- Unnecessary dependencies.
+- Fragile regular-expression-only SQL parsing.
+- Hidden side effects.
+- Fake query execution.
+- Stale cached result grids.
+- Direct DOM manipulation that conflicts with the framework.
+
+Use stable identifiers, predictable state updates, memoization where useful, and appropriate error boundaries.
+
+Ensure the editor remains responsive for the expected demo dataset.
+
+Document important architectural decisions and unsupported SQL features.
+
+## 17. NETLIFY AND LOCAL DEVELOPMENT COMPATIBILITY
+
+The project has previously been deployed to Netlify.
+
+Keep the implementation compatible with a static frontend deployment.
+
+Do not add a requirement for a backend server to make the SQL Workbench function.
+
+Do not assume that commands have been run merely because they appear in the generated documentation.
+
+Inspect the current package scripts and deployment configuration before changing them.
+
+If build and test commands are available, use the actual commands defined by the repository.
+
+Do not invent scripts such as npm run test or npm run build without checking package.json first.
+
+Do not delete existing project files or replace configuration wholesale without a clear technical reason.
+
+The final frontend must be deployable using the project's supported build and deployment workflow.
+
+## 18. ACCEPTANCE CRITERIA
+
+The work is not complete merely because the UI looks attractive.
+
+The implementation is acceptable only when the following behavior is implemented and verified as far as the available environment permits:
+
+A. The SQL Workbench opens without waiting for PostgreSQL.
+
+B. The local SQL engine initializes from the existing frontend dataset.
+
+C. The Schema Explorer displays actual local tables and columns.
+
+D. SELECT executes against the browser-side data.
+
+E. UPDATE modifies the underlying shared data store.
+
+F. The corresponding flight card updates immediately.
+
+G. INSERT and DELETE modify the actual simulated dataset.
+
+H. Invalid SQL displays a useful error without corrupting state.
+
+I. Saved changes persist after a refresh where browser storage permits.
+
+J. Reset Demo Data works only after confirmation.
+
+K. No backend, external API, PostgreSQL connection, or database credential is required.
+
+L. The existing SKY WINGS website remains intact.
+
+M. Connection indicators and database labels accurately describe the local engine.
+
+N. The implementation does not merely fake query results.
+
+O. All unsupported SQL features are clearly identified.
+
+P. Tests are reported truthfully.
+
+## 19. REQUIRED IMPLEMENTATION WORKFLOW
+
+Proceed in this order:
+
+Phase 1 — Inspect the repository and understand the existing architecture.
+
+Phase 2 — Identify the current SQL Workbench, data structures, state management, and source of the JSON parsing error.
+
+Phase 3 — Design the minimal architectural changes needed to introduce the local relational engine.
+
+Phase 4 — Implement the SQL tokenizer, parser, validation, and execution engine.
+
+Phase 5 — Connect the engine to the shared application data store.
+
+Phase 6 — Integrate the Schema Explorer, SQL editor, results grid, messages, history, and saved queries.
+
+Phase 7 — Integrate live updates into the existing flight listings and other relevant frontend components.
+
+Phase 8 — Implement persistence, reset, confirmations, and data integrity safeguards.
+
+Phase 9 — Add and run available tests.
+
+Phase 10 — Review the entire modified project for regressions, broken imports, inconsistent schemas, stale state, and misleading database claims.
+
+Do not stop after describing these phases. Carry out the actual implementation in the current project to the extent supported by the environment.
+
+If the task exceeds one editing pass, prioritize a complete, working end-to-end implementation over superficial additions to every screen.
+
+## 20. FINAL RESPONSE REQUIRED FROM YOU
+
+When the implementation is finished, provide a concise engineering handover containing:
+
+1. The actual root cause of the previous SQL Workbench error, based on the code inspected.
+2. The files created or modified.
+3. The SQL commands that genuinely work.
+4. Example queries for changing flight fares, routes, and seat availability.
+5. How the shared state updates the flight cards.
+6. How browser-side persistence works.
+7. How to reset the demo data.
+8. How to run the project using its actual package scripts.
+9. Any remaining issues or features not implemented.
+10. The actual test results, distinguishing executed tests from unverified tests.
+
+Do not claim a feature works unless the implementation supports that claim.
+
+## FINAL DIRECTIVE
+
+Modify my existing SKY WINGS Airline Reservation System in place.
+
+Build a genuine, limited SQL execution engine that works entirely inside the browser and updates the existing airline frontend through a shared source of truth.
+
+Preserve the project, preserve its visual identity, fix the existing SQL Workbench, implement real local query execution, and deliver a coherent, maintainable, thoroughly checked feature.
+
+NO BACKEND.
+NO POSTGRESQL CONNECTION.
+NO EXTERNAL DATABASE.
+NO FAKE QUERY RESULTS.
+NO DISCONNECTED DEMO.
+NO UNVERIFIED SUCCESS CLAIMS.
+
+The result must be an integrated, browser-only SQL development workbench for my existing SKY WINGS application.

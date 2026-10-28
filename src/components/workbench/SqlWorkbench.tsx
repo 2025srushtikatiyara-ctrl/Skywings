@@ -19,6 +19,7 @@ import {
   saveQuery,
   deleteSavedQuery,
   fetchQueryHistory,
+  resetDatabase,
 } from '../../services/api';
 import { analyzeSqlStatement } from '../../lib/sql/classifier';
 import {
@@ -56,6 +57,10 @@ const TEMPLATES = [
     sql: 'SELECT * FROM flights ORDER BY departure_time;',
   },
   {
+    name: 'Update Flight Fare (Real-Time Reactive Test)',
+    sql: "UPDATE flights SET price = 5200 WHERE flight_number = '6E-201';",
+  },
+  {
     name: 'Registered Passengers Directory',
     sql: 'SELECT * FROM passengers ORDER BY passenger_id;',
   },
@@ -81,18 +86,18 @@ JOIN flights f ON f.flight_id = b.flight_id
 ORDER BY b.booking_date DESC;`,
   },
   {
-    name: 'Information Schema Tables',
-    sql: `SELECT table_schema, table_name 
-FROM information_schema.tables 
-WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
-ORDER BY table_schema, table_name;`,
-  },
-  {
     name: 'Flight Seat Inventory Check',
     sql: `SELECT flight_number, source, destination, total_seats, available_seats,
        (total_seats - available_seats) AS seats_booked
 FROM flights
 ORDER BY available_seats ASC;`,
+  },
+  {
+    name: 'Calculate Revenue by Airline',
+    sql: `SELECT f.airline_name, COUNT(b.booking_id) AS total_bookings, SUM(b.total_amount) AS revenue
+FROM bookings b
+JOIN flights f ON f.flight_id = b.flight_id
+GROUP BY f.airline_name;`,
   },
 ];
 
@@ -117,6 +122,9 @@ export const SqlWorkbench: React.FC<SqlWorkbenchProps> = ({ dbStatus, onMutation
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveQueryName, setSaveQueryName] = useState('');
   const [saveQueryDesc, setSaveQueryDesc] = useState('');
+
+  // Reset demo data modal
+  const [showResetModal, setShowResetModal] = useState(false);
 
   // Confirmation for unconstrained mutations
   const [confirmUnconstrained, setConfirmUnconstrained] = useState(false);
@@ -293,9 +301,32 @@ export const SqlWorkbench: React.FC<SqlWorkbenchProps> = ({ dbStatus, onMutation
     setSql(query);
   };
 
+  const handleResetDemoData = async () => {
+    try {
+      await resetDatabase();
+      setShowResetModal(false);
+      await loadMetadata();
+      if (onMutationExecuted) {
+        onMutationExecuted();
+      }
+      setResult({
+        success: true,
+        executionTimeMs: 1,
+        rowCount: 0,
+        rowsAffected: 0,
+        columns: [],
+        rows: [],
+        statementType: 'RESET',
+        message: 'In-browser relational database reset to initial demo dataset (flights, passengers, bookings, airlines, airports).',
+      });
+    } catch (err: any) {
+      alert(`Reset failed: ${err.message}`);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Top Banner / Connection Information */}
+      {/* Top Banner / Truthful Storage & Engine Indicators */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-3xl bg-slate-900 border border-slate-800 p-5 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20">
@@ -303,22 +334,22 @@ export const SqlWorkbench: React.FC<SqlWorkbenchProps> = ({ dbStatus, onMutation
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-extrabold text-white">PostgreSQL 18 SQL Workbench</h2>
+              <h2 className="text-lg font-extrabold text-white">SKY WINGS Local SQL Workbench</h2>
               <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
-                Authorized Admin
+                Status: Ready
               </span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-400 font-mono mt-0.5">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-400 font-mono mt-0.5">
               <span>DB: <strong className="text-white">airline_reservation</strong></span>
               <span>•</span>
-              <span>Host: <strong className="text-cyan-400">{dbStatus.host}:{dbStatus.port}</strong></span>
+              <span>Engine: <strong className="text-cyan-400">Browser SQL Engine</strong></span>
               <span>•</span>
-              <span>Role: <strong className="text-slate-200">postgres</strong></span>
+              <span>Storage: <strong className="text-slate-200">Current Browser (localStorage)</strong></span>
             </div>
           </div>
         </div>
 
-        {/* Templates and Saved Queries dropdowns */}
+        {/* Templates, Saved Queries, and Reset Demo Data */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Templates */}
           <select
@@ -354,6 +385,15 @@ export const SqlWorkbench: React.FC<SqlWorkbenchProps> = ({ dbStatus, onMutation
           >
             <Bookmark className="h-3.5 w-3.5" />
             <span>Save</span>
+          </button>
+
+          <button
+            onClick={() => setShowResetModal(true)}
+            title="Reset database to initial demo dataset"
+            className="rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Reset Demo Data</span>
           </button>
         </div>
       </div>
@@ -804,6 +844,46 @@ export const SqlWorkbench: React.FC<SqlWorkbenchProps> = ({ dbStatus, onMutation
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Demo Data Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Reset Demo Database?</h3>
+                <p className="text-xs text-slate-400">Restore default simulated dataset</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed mb-5">
+              This will reset the in-browser database to the initial set of 4 flights, 3 passengers, and sample bookings.
+              Any SQL alterations, inserted flights, or custom records stored in your browser's <code className="text-cyan-400 font-mono">localStorage</code> will be reset to default.
+            </p>
+
+            <div className="flex justify-end gap-2 border-t border-slate-800 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowResetModal(false)}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDemoData}
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 px-5 py-2 text-xs font-bold text-white transition-all shadow-lg shadow-rose-900/30 flex items-center gap-1.5"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Confirm Reset</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
