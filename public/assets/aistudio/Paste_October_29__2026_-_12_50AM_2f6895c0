@@ -1,0 +1,1473 @@
+# MASTER ENGINEERING DIRECTIVE
+# SKY WINGS — ENTERPRISE-GRADE AIRLINE RESERVATION SYSTEM WITH AN INTEGRATED SQL WORKBENCH
+
+## 0. YOUR ROLE, EXPECTATIONS, AND DEFINITION OF DONE
+
+Act as a principal software architect, staff-level full-stack engineer, database engineer, application security engineer, UI/UX systems designer, test engineer, and technical reviewer working as one highly experienced engineering team.
+
+Assume the project owner is a veteran frontend and backend developer with over 25 years of professional software development experience. Do not produce a beginner-looking application, tutorial-style interface, simplistic CRUD demo, or generic AI-generated dashboard. The product must reflect mature engineering judgment, strong architectural decisions, production-quality visual design, robust error handling, excellent maintainability, and carefully reasoned database behavior.
+
+The application is called SKY WINGS — Airline Reservation System.
+
+The project must be a complete, functional, full-stack web application with an integrated SQL Console / Database Workbench that operates on the application's EXISTING PostgreSQL 18 database and allows authorized users to inspect and modify application data through SQL.
+
+This is an implementation assignment, not a brainstorming task.
+
+Do not stop after producing a plan, wireframe, static frontend, pseudocode, incomplete file tree, or API specification. Inspect the available project environment, implement the application, run the available checks, correct failures, and document any remaining limitations.
+
+Use all available implementation capabilities and available context efficiently. Do not unnecessarily compress the code, omit important files, replace real functionality with placeholders, or ask me to implement routine missing pieces manually.
+
+However, never claim that an operation, database connection, test, migration, or deployment succeeded unless the relevant result has actually been observed and verified.
+
+When access to my local machine, PostgreSQL server, or an external resource is unavailable, explain the exact boundary and implement the strongest verifiable solution possible. Do not fabricate tool access.
+
+## 1. PRIMARY OBJECTIVE
+
+Build a polished airline reservation website and operational administration interface connected to a real PostgreSQL database.
+
+The most important feature is a fully integrated SQL Console that permits authorized administrators to run SQL against the application's existing database and immediately observe the consequences in the website.
+
+The required end-to-end behavior is:
+
+1. An administrator opens the SQL Workbench.
+2. The administrator selects an authorized database connection and enters SQL.
+3. The SQL editor provides professional editing capabilities and clear execution controls.
+4. The backend validates the request, enforces authorization and execution policy, and executes the query through a controlled PostgreSQL connection.
+5. The console displays returned rows, column metadata, affected-row counts, execution duration, warnings, and errors as applicable.
+6. Successful database changes invalidate or refresh the appropriate application data.
+7. Open frontend views receive updates through a reliable synchronization mechanism.
+8. Updated data appears in flight listings, booking tables, dashboard metrics, and other affected components without a full-page reload.
+9. Failed queries do not create false success notifications or misleading frontend state.
+10. The SQL Workbench maintains a clear distinction between previewing changes, executing statements, committing transactions, and rolling back transactions.
+
+The application must use PostgreSQL as its source of truth. Do not implement a disconnected demonstration that merely simulates database operations.
+
+## 2. EXISTING TECHNOLOGY STACK — PRESERVE IT
+
+Use this stack unless the existing project contains a justified, working equivalent that should be preserved.
+
+Frontend:
+- React
+- Vite
+- JavaScript or TypeScript, matching the existing codebase where practical
+- Semantic HTML
+- Modern CSS, CSS modules, or a maintainable Tailwind setup
+- React Router for navigation
+- TanStack Query or an equivalent established server-state solution
+- A professional code editor such as Monaco Editor for the SQL Workbench, where supported by the runtime
+
+Backend:
+- Node.js
+- Express
+- PostgreSQL driver: pg / node-postgres
+- dotenv for server-side environment configuration
+- A structured validation library such as Zod or an equivalent
+- Centralized error handling
+- Authentication and authorization middleware for administrative operations
+- Structured logging that excludes credentials and sensitive values
+
+Database:
+- PostgreSQL 18
+- Existing database name: airline_reservation
+- Existing host: localhost
+- Existing port: 5432
+- Existing username: postgres
+- Password supplied only through the local backend environment file
+
+Communication:
+- REST APIs
+- Server-Sent Events (SSE) for one-way real-time invalidation notifications, or WebSockets if the existing architecture has a compelling need for bidirectional communication
+- PostgreSQL LISTEN/NOTIFY where appropriate for cross-process database event notification
+
+Development:
+- Vite development server
+- Express backend server
+- Separate frontend and backend processes when required
+- No Docker or cloud migration unless explicitly requested
+- No replacement database
+
+Before modifying an existing repository, inspect the current structure, package manifests, routing, styles, API code, and database scripts. Preserve working code and existing naming conventions when possible. Do not blindly overwrite the project.
+
+If the environment cannot install dependencies or use a specific editor, choose a viable alternative and document the trade-off rather than producing a broken dependency chain.
+
+## 3. EXISTING DATABASE — NON-NEGOTIABLE PRESERVATION POLICY
+
+The existing PostgreSQL database is named airline_reservation.
+
+Connection settings:
+
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=airline_reservation
+PGUSER=postgres
+PGPASSWORD=<entered locally by the project owner>
+PORT=5000
+CLIENT_ORIGIN=http://localhost:5173
+
+I will enter the actual password in my local backend/.env file.
+
+Never ask me to send my password in chat. Never hardcode it, display it, commit it, place it in frontend code, or expose it through a VITE_ environment variable.
+
+The existing database contains these tables.
+
+### passengers
+
+- passenger_id SERIAL PRIMARY KEY
+- full_name VARCHAR(100) NOT NULL
+- email VARCHAR(100) UNIQUE NOT NULL
+- phone VARCHAR(15)
+
+### flights
+
+- flight_id SERIAL PRIMARY KEY
+- airline_name VARCHAR(100) NOT NULL
+- flight_number VARCHAR(20) UNIQUE NOT NULL
+- source VARCHAR(100) NOT NULL
+- destination VARCHAR(100) NOT NULL
+- departure_time TIMESTAMP NOT NULL
+- arrival_time TIMESTAMP NOT NULL
+- price NUMERIC(10,2) NOT NULL
+- total_seats INT NOT NULL
+
+### bookings
+
+- booking_id SERIAL PRIMARY KEY
+- passenger_id INT referencing passengers(passenger_id)
+- flight_id INT referencing flights(flight_id)
+- booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+- seats_booked INT NOT NULL DEFAULT 1
+- total_amount NUMERIC(10,2) NOT NULL
+- booking_status VARCHAR(20) DEFAULT 'Confirmed'
+
+Existing data includes sample passengers, sample flights, and at least one booking with passenger ID 1, flight ID 1, two seats, and a total amount of ₹9,000.
+
+Sample flights include:
+- IndiGo 6E-201, Mumbai to Delhi
+- Air India AI-101, Mumbai to Bengaluru
+- Akasa Air QP-140, Delhi to Mumbai
+
+Treat these details as expected existing data, not permission to overwrite or duplicate the records.
+
+### Mandatory preservation rules
+
+- Do not drop the database.
+- Do not recreate the database.
+- Do not truncate existing tables.
+- Do not reset sequences or primary keys.
+- Do not delete existing records as part of setup.
+- Do not overwrite existing sample records with seed data.
+- Do not run destructive migrations automatically.
+- Do not use DROP TABLE, DROP SCHEMA, DROP DATABASE, TRUNCATE, or destructive cascading operations in setup scripts.
+- Inspect the actual schema before changing it.
+- Detect schema differences instead of assuming the declared schema perfectly matches the real database.
+- Use additive, versioned, repeatable migrations wherever possible.
+- Record completed migrations.
+- Detect and report data conflicts before adding constraints.
+- Never silently repair or delete conflicting records.
+
+If database access is unavailable during generation, build the inspection and migration tools and clearly state that actual database introspection must be run locally.
+
+## 4. PRODUCT EXPERIENCE AND VISUAL DIRECTION
+
+Create a sophisticated, contemporary airline application with the quality of a well-designed commercial travel platform and the precision of a professional database administration tool.
+
+The visual identity should combine:
+- Deep midnight navy
+- Refined aviation blue
+- White and subtle cool-gray surfaces
+- Restrained cyan accents
+- Carefully controlled status colors
+- Consistent spacing and typography
+- Subtle borders, shadows, transitions, and depth
+- High-quality tables and data visualizations
+- Strong readability in both operational dashboards and the SQL editor
+
+Avoid:
+- Generic unmodified dashboard templates
+- Excessive gradients
+- Randomly scattered cards
+- Overly rounded components everywhere
+- Excessive animation
+- Unnecessary decorative charts
+- Fake operational metrics
+- Fake user avatars presented as real identities
+- Placeholder charts presented as live analytics
+- Buttons that do nothing
+- Oversized empty hero sections in administrative pages
+- Inconsistent typography, spacing, and color usage
+
+Use a consistent design system with:
+- CSS custom properties/design tokens
+- Typography scale
+- Spacing scale
+- Component variants
+- Standardized input and button heights
+- Consistent focus rings
+- Accessible contrast
+- Responsive layout breakpoints
+- Reusable modal, drawer, tooltip, table, badge, and notification components
+
+Support desktop, tablet, and mobile layouts. The SQL Workbench should be optimized for desktop but must remain usable on narrower screens.
+
+Respect reduced-motion preferences. Use meaningful transitions without sacrificing responsiveness.
+
+## 5. APPLICATION INFORMATION ARCHITECTURE
+
+Implement the following main areas.
+
+### A. Public-facing airline website
+
+1. Home / Flight Search
+2. Search Results
+3. Passenger Details
+4. Demo Payment
+5. Booking Confirmation
+6. My Bookings
+7. Booking Cancellation
+8. About / Help
+
+### B. Administrative application
+
+1. Admin Overview
+2. Flight Management
+3. Passenger Management
+4. Booking Management
+5. Booking Detail
+6. Reports and Analytics
+7. SQL Workbench
+8. Schema Explorer
+9. Query History
+10. Audit Log
+11. Administration Settings
+
+Do not build all areas as superficial empty pages. Implement each page's real behavior, and avoid introducing pages that have no meaningful function.
+
+The public and administrative navigation should be visually distinct while using the same coherent design system.
+
+## 6. ADMINISTRATIVE AUTHENTICATION AND AUTHORIZATION
+
+The SQL Console can modify the database, so it must never be exposed as an unrestricted public endpoint.
+
+Implement administrative authentication appropriate to the project environment.
+
+Requirements:
+- Login form for authorized administrators.
+- Secure password verification using a suitable password hashing algorithm.
+- Server-side authorization on every administrative API.
+- Secure, HTTP-only, SameSite cookies where cookie-based sessions are used.
+- CSRF protections appropriate to the authentication design.
+- Session expiration and logout.
+- Rate limiting on login and sensitive operations.
+- Generic login errors that do not disclose whether a username exists.
+- No hardcoded default production credentials.
+- No public registration that automatically grants administrator privileges.
+- No administrator password or session secret in frontend source code.
+- A documented local bootstrap procedure for the first administrator.
+- No automatic creation of a privileged account with a publicly known password.
+- Audit events for authentication and sensitive administrative actions.
+
+Use least privilege for database operations. Prefer a dedicated PostgreSQL role for the application and a separate, explicitly configured role for administrative SQL operations.
+
+The existing postgres superuser account may be used for the owner's initial local setup if necessary, but do not require superuser privileges for ordinary application operation. Document how to configure least-privilege roles without changing ownership or breaking the existing database.
+
+If secure authentication cannot be fully completed in the current environment, do not silently make the console public. Keep privileged routes disabled until a valid configuration is provided and explain exactly what is missing.
+
+## 7. THE CORE FEATURE: PROFESSIONAL SQL WORKBENCH
+
+Implement an actual SQL execution interface connected to the backend PostgreSQL connection.
+
+It must execute SQL on the existing airline_reservation database, not a browser-side simulation.
+
+### 7.1 Editor interface
+
+Use Monaco Editor if dependency and runtime support allow it.
+
+Configure:
+- SQL syntax highlighting
+- Line numbers
+- Indentation
+- Bracket matching
+- Find functionality
+- Search and replace
+- Multi-line SQL
+- Current-line highlighting
+- A visible cursor position where supported
+- Readable SQL font
+- Editor theme consistent with the application
+- Keyboard shortcuts
+- Clear execution controls
+- Editor resize capability
+- A useful mobile fallback
+
+Provide:
+- Run Query
+- Run Selected SQL
+- Format SQL, if supported by the chosen formatter
+- Clear Editor
+- Explain Query
+- Cancel Running Query, when safely supported
+- Save Query
+- Query History
+- Transaction controls when explicit transaction mode is enabled
+- Connection status
+- Active database name
+- Active role
+- Query duration
+- Result status
+
+The Run Selected SQL action must execute only the explicitly selected statement or text range. If no selection exists, the interface may execute the current statement or the entire editor according to a clearly documented and predictable rule.
+
+Never silently execute a larger range than the user intended.
+
+### 7.2 Example SQL templates
+
+Provide useful, editable templates rather than executing them automatically.
+
+Examples:
+
+SELECT * FROM flights ORDER BY departure_time;
+
+SELECT * FROM passengers ORDER BY passenger_id;
+
+SELECT * FROM bookings ORDER BY booking_date DESC;
+
+SELECT
+    b.booking_id,
+    p.full_name,
+    p.email,
+    f.flight_number,
+    f.source,
+    f.destination,
+    b.seats_booked,
+    b.total_amount,
+    b.booking_status
+FROM bookings b
+JOIN passengers p ON p.passenger_id = b.passenger_id
+JOIN flights f ON f.flight_id = b.flight_id
+ORDER BY b.booking_date DESC;
+
+SELECT
+    table_schema,
+    table_name
+FROM information_schema.tables
+WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+ORDER BY table_schema, table_name;
+
+These templates must be editable. Do not seed the application by executing them automatically.
+
+### 7.3 Query classification
+
+Classify incoming SQL conservatively.
+
+At minimum, recognize:
+- Read-only queries
+- Data-changing queries
+- Schema-changing queries
+- Transaction-control statements
+- Administrative statements
+- Unsupported or ambiguous statements
+
+Potential categories include SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, TRUNCATE, GRANT, REVOKE, transaction statements, EXPLAIN, and related PostgreSQL statements.
+
+Do not rely exclusively on a regular expression or a simple check for the first SQL keyword. PostgreSQL supports CTEs, comments, quoted identifiers, multiple statements, data-modifying CTEs, functions, and other constructs that make superficial parsing unsafe.
+
+Use a reliable PostgreSQL-aware parser or a conservative execution policy with server-side safeguards. Never claim that lexical classification alone guarantees safety.
+
+Reject unsupported constructs explicitly instead of pretending they are safe.
+
+### 7.4 Read-only query execution
+
+For ordinary read-only operations:
+- Use a dedicated read-only database role where possible.
+- Apply transaction-level read-only enforcement.
+- Enforce statement timeouts.
+- Limit the maximum returned row count.
+- Limit result payload size.
+- Include column names and types when available.
+- Display the number of rows returned.
+- Distinguish rows returned from rows affected.
+- Handle large results through pagination or a bounded response.
+- Prevent accidental unbounded memory consumption.
+- Return structured, sanitized errors.
+
+Do not truncate a result silently without informing the user.
+
+If a result has been capped, display the cap and provide a pagination or refinement option where practical.
+
+### 7.5 Data-changing SQL
+
+Support authorized INSERT, UPDATE, and DELETE statements through a controlled execution path.
+
+Requirements:
+- Authenticate and authorize the administrator on the server.
+- Use a dedicated administrative database role with only the permissions required for the configured environment.
+- Apply statement timeouts and appropriate resource limits.
+- Detect affected-row counts.
+- Display a clear confirmation for potentially broad changes.
+- Offer a review step for destructive or high-impact statements.
+- Show an explicit result message only after a successful database operation.
+- Invalidate the relevant frontend data after a committed mutation.
+- Do not use frontend-provided SQL classification as the sole security boundary.
+
+For UPDATE or DELETE statements without a restrictive WHERE clause, provide an additional warning and explicit confirmation. Because SQL semantics can be complex, the system must not claim that checking for the literal word WHERE is sufficient to determine whether a query is safe.
+
+Support parameterized execution for application-generated SQL. For administrator-entered SQL, treat the SQL editor as a privileged database interface and enforce permissions, resource limits, auditability, and explicit safeguards.
+
+### 7.6 Schema-changing SQL
+
+Schema changes may be necessary for legitimate administration and DBMS demonstrations.
+
+Support authorized CREATE and ALTER statements only within the permissions of the configured administrative role and the SQL Workbench policy.
+
+Requirements:
+- Preview the intended operation when possible.
+- Require explicit confirmation for schema changes.
+- Identify affected objects when reliably possible.
+- Record an audit event.
+- Invalidate schema metadata after successful committed changes.
+- Refresh the schema explorer.
+- Refresh any affected frontend views when their data or schema dependencies change.
+- Clearly report PostgreSQL errors when an operation cannot be completed.
+
+Do not silently permit destructive operations against the existing application schema.
+
+DROP, TRUNCATE, DROP SCHEMA, DROP DATABASE, destructive cascading changes, privilege escalation, role manipulation, and other high-risk operations must be disabled by default.
+
+If a deliberate local development override is implemented, it must require explicit server-side configuration, a privileged authenticated administrator, clear warnings, and a separate policy path. Never make dangerous database operations available merely because a frontend button is clicked.
+
+Never execute arbitrary shell commands, OS commands, filesystem writes, or network requests from SQL input. Do not enable unsafe extensions or unrestricted server-side file/program functions as a workaround.
+
+### 7.7 Transactions and rollback
+
+Design transaction support carefully.
+
+For a single data-changing statement, use a transaction where appropriate and commit only when the statement succeeds.
+
+For multi-statement SQL:
+- Define supported behavior clearly.
+- Avoid ambiguous partial-success reporting.
+- Reject multiple statements if reliable transaction handling and result mapping are unavailable.
+- When multi-statement execution is supported, group operations in a controlled transaction when compatible with the SQL being executed.
+- Roll back on errors when the application owns the transaction.
+- Never claim rollback can undo an already committed statement.
+- Do not automatically wrap operations that cannot legally execute inside a transaction block without handling the limitation.
+
+If explicit interactive transactions are supported, maintain transaction state on the server, bind it to the authenticated session, enforce expiration, and prevent connection-pool clients from being shared between unrelated sessions.
+
+Expose Commit and Rollback controls only when a valid, owned transaction exists.
+
+For safety, do not keep a database transaction open indefinitely. Add idle expiration, cleanup on logout, bounded lifetime, and clear transaction status.
+
+### 7.8 Query cancellation and timeouts
+
+Implement a statement timeout and maximum execution duration.
+
+Where query cancellation is supported, provide a Cancel action tied to the exact active query and backend request.
+
+Do not simulate cancellation by merely hiding the loading indicator. If cancellation cannot be confirmed, explain the state accurately and avoid claiming that the SQL definitely stopped.
+
+Release database resources correctly even after cancellation, disconnects, or errors.
+
+### 7.9 Results grid
+
+Display query results in a professional, interactive grid.
+
+Include:
+- Column headers
+- Horizontal scrolling
+- Sticky headers where appropriate
+- Row numbers
+- Null-value representation
+- Type-aware formatting
+- Copy-cell functionality
+- Copy-row functionality
+- Copy selected results as CSV or JSON
+- Download CSV, with safe handling of formula-like values
+- Pagination for large results
+- Clear empty-result messages
+- Affected-row count for mutations
+- Execution duration
+- Query success or failure
+- PostgreSQL error information in a readable format
+- Optional raw JSON response view for debugging
+
+Avoid rendering unlimited rows in the browser.
+
+Do not display confidential server details, credentials, filesystem paths, or raw stack traces.
+
+For editable database tables, allow administrators to navigate from the grid to the relevant management page. Inline editing may be implemented only where it can be done safely with correct row identification, validation, transaction handling, and clear success/error states.
+
+### 7.10 Query history and saved queries
+
+Provide:
+- Recent query history
+- Query text
+- Execution timestamp
+- Execution duration
+- Success/failure state
+- Rows returned or affected
+- Error summary
+- Saved query names
+- Search and filtering
+- Re-run action
+- Copy-to-editor action
+
+Persist query history and saved queries in a suitable database table or a controlled application store, depending on the design.
+
+Never store passwords, authentication tokens, session cookies, or other credentials in query history.
+
+Consider that SQL text can contain personal data or secrets. Restrict history visibility, define a retention policy, and provide a way to remove saved entries when appropriate.
+
+Use parameter redaction and structured logging where possible.
+
+Do not persist an entire result set in the history unless explicitly needed and safely bounded.
+
+## 8. SCHEMA EXPLORER
+
+Implement a schema explorer integrated with the SQL Workbench.
+
+Use PostgreSQL system catalogs and information_schema views with appropriate permissions.
+
+Display:
+- Database name
+- Schemas
+- Tables
+- Views
+- Columns
+- Data types
+- Nullability
+- Default values
+- Primary keys
+- Foreign keys
+- Unique constraints
+- Check constraints
+- Indexes
+- Row estimates or clearly labeled approximate counts
+- Relationships between tables
+
+At minimum, show the existing passengers, flights, and bookings tables.
+
+When a table is selected, display its columns and relationships.
+
+Provide a safe action to insert a SELECT template into the editor.
+
+A table-inspection action must not modify the database.
+
+Refresh schema metadata after successful DDL operations.
+
+Clearly distinguish estimated row counts from exact counts. Do not run expensive full-table counts automatically on every navigation.
+
+Never display internal PostgreSQL catalogs as application tables by default, but allow authorized inspection where appropriate.
+
+## 9. LIVE DATABASE-TO-FRONTEND SYNCHRONIZATION
+
+This feature is essential.
+
+When the SQL Console changes database data, all relevant application views should update promptly and correctly.
+
+### 9.1 Required synchronization behavior
+
+Examples:
+
+- INSERT a flight: the flight management list and eligible flight search results refresh.
+- UPDATE a flight price: displayed prices and future booking calculations reflect the current database value.
+- UPDATE a departure time: affected flight listings refresh.
+- INSERT a booking: the booking list, booking details, relevant metrics, and available-seat data update.
+- UPDATE a booking status: status badges and booking reports update.
+- DELETE an authorized application record, where permitted: affected views refresh and display an appropriate empty state if needed.
+- ALTER a relevant table: schema metadata refreshes and incompatible views display actionable errors rather than stale or misleading data.
+- Execute a successful query that changes no rows: report zero affected rows without falsely announcing a data change.
+
+### 9.2 Preferred architecture
+
+Implement a backend-mediated event system.
+
+Use one or more of:
+- PostgreSQL LISTEN/NOTIFY
+- A dedicated event publisher
+- Server-Sent Events
+- WebSockets when justified
+
+A successful application-managed write should publish an event only after the transaction commits.
+
+Events should describe affected resources, such as:
+- flights
+- passengers
+- bookings
+- schema
+- dashboard metrics
+
+Avoid broadcasting raw SQL text, full row contents, credentials, or passenger personal information to every connected browser.
+
+For SQL executed through the Workbench, derive the invalidation scope conservatively.
+
+If the exact affected tables cannot be determined reliably, publish a generic database-changed event that triggers safe invalidation of the relevant server-state caches. Do not guess and refresh the wrong page only.
+
+### 9.3 Changes originating outside the application
+
+A PostgreSQL LISTEN/NOTIFY listener does not automatically detect every arbitrary database modification.
+
+Account for external writes performed through pgAdmin or another SQL client.
+
+Choose a reliable strategy appropriate to this project:
+- PostgreSQL triggers emitting compact notifications for relevant table changes
+- A database event system with reliable transactional semantics
+- Bounded polling or periodic reconciliation as a fallback
+- A combination of event notifications and reconciliation
+
+If triggers are used, create them through versioned, additive migrations. Ensure repeated migrations do not create duplicate triggers. Do not alter unrelated user-defined triggers.
+
+Notifications must not include sensitive row data.
+
+For transaction-sensitive events, ensure notification behavior matches the commit state of the underlying operation.
+
+For PostgreSQL NOTIFY, remember that notification payloads are size-limited and are not a durable event log. Do not treat a lost notification as proof that the underlying database change never occurred.
+
+Implement reconnection and resubscription after a database connection interruption.
+
+Add periodic reconciliation or a suitable refetch fallback so the UI can recover from dropped connections or missed events.
+
+### 9.4 Frontend state strategy
+
+Use TanStack Query or a similarly mature state-management approach for server data.
+
+Implement centralized query keys and resource invalidation.
+
+When an event arrives:
+- Validate its structure.
+- Invalidate affected query keys.
+- Refetch data through the backend API.
+- Preserve stable UI state where possible.
+- Avoid duplicate network requests from the same event.
+- Deduplicate bursts of related notifications.
+- Show a subtle synchronization indicator.
+- Reconnect safely after connection loss.
+- Do not create infinite refetch loops.
+
+Do not update the UI by directly trusting event payloads as authoritative database records. Re-fetch the canonical data from the backend.
+
+For external database writes, provide eventual consistency with a clearly defined maximum reconciliation interval.
+
+Display the last successful synchronization time and connection status where useful.
+
+## 10. FLIGHT SEARCH
+
+Implement real search against PostgreSQL.
+
+Search fields:
+- Source city
+- Destination city
+- Departure date
+- Passenger/seat count
+
+Requirements:
+- Case-insensitive city matching.
+- Reject identical source and destination.
+- Validate the date.
+- Reject invalid or non-positive seat counts.
+- Exclude flights that have already departed.
+- Return only flights with sufficient available seats.
+- Sort results sensibly by departure time.
+- Display a helpful no-results state.
+- Use database values for prices and availability.
+- Support refreshing search results after database changes.
+
+Do not hardcode the sample flights in the frontend as actual search results.
+
+## 11. PASSENGER AND BOOKING WORKFLOWS
+
+Implement the actual booking flow.
+
+Collect:
+- Passenger name
+- Email
+- Phone
+- Selected flight
+- Number of seats
+
+Calculate price and availability on the backend using current database values.
+
+The frontend's price is informational only and must never be trusted as the authoritative amount.
+
+For this academic project, provide a simulated payment step that never requests real card details.
+
+Booking workflow:
+1. Validate request input.
+2. Start a PostgreSQL transaction.
+3. Lock the selected flight row using SELECT ... FOR UPDATE.
+4. Check that the flight exists and has not departed.
+5. Check that available seats are sufficient.
+6. Create or reuse the passenger using the unique email.
+7. Calculate the total amount from the database price.
+8. Insert the booking.
+9. Reduce available seats.
+10. Commit the transaction.
+11. Publish appropriate post-commit invalidation events.
+12. Return the persisted booking confirmation.
+
+If any step fails, roll back the transaction.
+
+Use correct PostgreSQL transaction handling and release clients in finally blocks.
+
+Prevent overbooking under concurrent requests.
+
+Use idempotency protection where appropriate to prevent accidental duplicate submissions from repeated requests.
+
+Do not add a duplicate passenger when an existing email already belongs to a passenger.
+
+## 12. SEAT AVAILABILITY AND DATABASE INTEGRITY
+
+Add available_seats to flights if it does not already exist.
+
+Initialize it safely based on total_seats minus the seats reserved by eligible active bookings.
+
+Define how cancelled bookings affect seat counts.
+
+Ensure available_seats is between zero and total_seats.
+
+Avoid recalculating and resetting seat availability on every startup.
+
+Use an idempotent migration or a migration tracking mechanism.
+
+Check existing data before adding constraints.
+
+Prevent race conditions through row locking or an equivalent reliable concurrency strategy.
+
+Cancellation must:
+- Verify the booking and passenger email.
+- Confirm the booking is eligible for cancellation.
+- Prevent cancellation after departure.
+- Prevent duplicate cancellation.
+- Update booking status and restore seats exactly once.
+- Perform both changes in one transaction.
+- Preserve the booking record.
+
+Ensure the SQL Workbench and ordinary application APIs use a coherent consistency model.
+
+If an administrator directly changes booking or seat-related columns using SQL, the application must not falsely claim that every business invariant has been enforced automatically.
+
+Document which invariants are enforced by constraints, application transactions, triggers, or administrative policy.
+
+Where safe, enforce critical invariants at the database level. For complex operations, provide guarded administrative workflows rather than pretending arbitrary SQL can be made equivalent to the booking service.
+
+## 13. FLIGHT MANAGEMENT
+
+Provide a real administrative interface to:
+- List flights
+- Search and filter flights
+- View details
+- Create flights
+- Edit flight details
+- Update prices
+- Update schedules
+- Inspect availability
+- Deactivate or remove flights only under safe, documented business rules
+
+Use the existing flights table and add only necessary fields through migrations.
+
+Validate:
+- Required fields
+- Flight number uniqueness
+- Positive fares
+- Valid seat counts
+- Arrival after departure
+- Reasonable date values
+- Availability constraints
+
+All changes must persist to PostgreSQL and update relevant frontend views.
+
+## 14. PASSENGER MANAGEMENT
+
+Provide authorized passenger search and detail views.
+
+Show:
+- Passenger ID
+- Name
+- Email
+- Phone, when available
+- Booking count
+- Relevant booking history
+
+Restrict access to personally identifiable information.
+
+Use pagination, search, and appropriate authorization.
+
+Avoid unnecessary collection, exposure, or duplication of personal data.
+
+Never broadcast passenger names, emails, or phone numbers through general real-time notifications.
+
+## 15. BOOKING MANAGEMENT
+
+Provide:
+- Booking list
+- Booking ID
+- Passenger
+- Flight
+- Seat count
+- Total amount
+- Booking date
+- Booking status
+- Booking detail
+- Search and filters
+- Status filtering
+- Flight relationship
+- Passenger relationship
+
+Use real SQL JOINs and database values.
+
+Preserve booking records when cancelled.
+
+Ensure that cancellation and seat restoration are consistent.
+
+When a booking changes through the SQL Workbench, refresh the booking list, relevant detail views, and metrics.
+
+## 16. ADMIN DASHBOARD AND REPORTING
+
+Build a professional operational dashboard with real database-derived metrics.
+
+Possible metrics:
+- Total flights
+- Upcoming flights
+- Total passengers
+- Confirmed bookings
+- Cancelled bookings
+- Booking revenue
+- Seats remaining
+- Recent bookings
+- Flight utilization
+
+Use accurate SQL aggregations.
+
+Clearly define whether revenue includes only confirmed bookings and how cancellations are treated.
+
+Do not mix estimated counts with exact counts without labeling them.
+
+Use sensible date ranges and efficient queries.
+
+Do not invent historical revenue or fake recent bookings.
+
+Add useful charts only when they answer an operational question.
+
+All dashboard metrics must update after relevant database changes.
+
+## 17. BACKEND API DESIGN
+
+Build a clean Express API with modular routes, controllers, services, middleware, and database configuration.
+
+Expected public routes include:
+- GET /api/health
+- GET /api/flights
+- GET /api/flights/search
+- GET /api/flights/:id
+- POST /api/bookings
+- GET /api/bookings/:id
+- GET /api/bookings
+- POST /api/bookings/:id/cancel
+
+Expected administrative routes may include:
+- POST /api/admin/auth/login
+- POST /api/admin/auth/logout
+- GET /api/admin/auth/me
+- GET /api/admin/dashboard
+- CRUD routes for flights
+- Restricted passenger lookup routes
+- Restricted booking administration routes
+- GET /api/admin/schema
+- GET /api/admin/schema/tables/:tableName
+- POST /api/admin/sql/execute
+- POST /api/admin/sql/explain
+- GET /api/admin/sql/history
+- POST /api/admin/sql/saved
+- GET /api/admin/sql/saved
+- DELETE /api/admin/sql/saved/:id
+- GET /api/admin/events or an equivalent SSE endpoint
+- GET /api/admin/audit
+
+Choose sensible methods and response formats. Do not expose a generic unrestricted database query endpoint to unauthenticated users.
+
+For every route:
+- Validate parameters and request bodies.
+- Use parameterized SQL for application-generated queries.
+- Return appropriate HTTP status codes.
+- Return a consistent response envelope.
+- Handle missing records correctly.
+- Sanitize client-facing error messages.
+- Record appropriate audit events.
+- Enforce authorization on the server.
+- Avoid exposing database internals.
+
+The SQL Workbench is an intentionally privileged feature. Its execution endpoint requires stricter controls than ordinary CRUD endpoints.
+
+## 18. SQL WORKBENCH API CONTRACT
+
+Define a stable request/response contract.
+
+An execution request may contain:
+- SQL text
+- Optional selected statement identifier or selected text
+- Requested execution mode
+- Optional parameters for supported parameterized templates
+- Client-generated request ID
+
+The server must never trust a frontend-supplied role, database name, permission level, classification, affected-table list, or authorization flag.
+
+A successful response should contain relevant fields such as:
+- success
+- execution ID
+- query classification
+- columns
+- rows
+- rowCount
+- rowsReturned
+- rowsAffected
+- durationMs
+- truncated
+- database identity
+- committed state
+- warnings
+- synchronization event status
+
+Include only fields relevant to the query type.
+
+An error response should contain:
+- success: false
+- stable error code
+- sanitized message
+- optional safe diagnostic detail
+- execution ID, where available
+
+Never include database passwords, connection strings, raw stack traces, filesystem details, or sensitive SQL parameter values.
+
+Distinguish clearly between:
+- Statement succeeded
+- Transaction committed
+- Mutation produced no affected rows
+- Statement failed
+- Query cancelled
+- Query timed out
+- Commit outcome uncertain due to a connection interruption
+
+If the connection fails after a commit request, do not automatically claim the operation rolled back. Report the uncertainty and provide a safe verification path.
+
+## 19. SQL EXPLAIN SUPPORT
+
+Provide an Explain Query action for supported statements.
+
+Prefer EXPLAIN without ANALYZE by default.
+
+EXPLAIN ANALYZE executes the statement and may have side effects. Do not run it automatically on user-provided SQL.
+
+If EXPLAIN ANALYZE is offered, require explicit confirmation and apply the same authorization and execution policies as the underlying statement.
+
+Display the resulting plan in a readable panel with expandable details where practical.
+
+Do not claim that EXPLAIN output proves a query is efficient in every production workload.
+
+## 20. AUDITABILITY
+
+Maintain an audit trail for privileged operations.
+
+Capture where appropriate:
+- Administrator identity
+- Action category
+- Execution ID
+- Timestamp
+- Query classification
+- Sanitized SQL fingerprint or safely redacted SQL
+- Success/failure
+- Affected-row count
+- Execution duration
+- Database identity
+- Correlation ID
+
+Do not log passwords, tokens, connection secrets, or unrestricted row data.
+
+Define retention behavior.
+
+Protect audit records from ordinary administrator editing where possible.
+
+Clearly distinguish an application audit record from a guaranteed, tamper-proof database audit log.
+
+## 21. PERFORMANCE AND RESOURCE MANAGEMENT
+
+Use:
+- PostgreSQL connection pooling
+- Bounded query execution
+- Database statement timeouts
+- Request timeouts appropriate to operation type
+- Pagination
+- Appropriate indexes
+- Efficient JOINs and aggregations
+- Query invalidation rather than unnecessary full-page reloads
+- Debounced search inputs where appropriate
+- Efficient table rendering
+- Lazy loading for heavy administrative features
+- A dedicated listener connection for LISTEN/NOTIFY if used
+- Reliable reconnection and resource cleanup
+
+Do not create a new database connection for every query without pooling.
+
+Do not run expensive schema introspection repeatedly when cached metadata is valid.
+
+Do not allow the SQL editor to return an unlimited number of rows or execute unbounded workloads without appropriate policy.
+
+Do not use aggressive polling as the only mechanism when a better notification mechanism is feasible. If polling is used as a fallback, keep it bounded and document its consistency interval.
+
+## 22. APPLICATION SECURITY
+
+Implement:
+- Parameterized SQL in ordinary application endpoints
+- Server-side validation
+- Authentication and authorization
+- CSRF protection when applicable
+- Restricted CORS
+- Rate limiting
+- Secure cookie settings
+- Security headers
+- Request body size limits
+- Query execution timeouts
+- Database role separation
+- Secret management through environment variables
+- Sanitized error handling
+- Safe logging
+- SQL Workbench authorization
+- Audit logging
+- Resource limits
+- Appropriate handling of database notifications
+- Safe export behavior
+
+The SQL Workbench is a privileged database interface, so explicitly document its threat model.
+
+Do not claim that an SQL parser, keyword denylist, or frontend confirmation dialog alone makes arbitrary SQL safe.
+
+Do not allow ordinary public users to access administrative tables, the SQL execution endpoint, schema modification features, or privileged database metadata.
+
+Do not expose PostgreSQL directly to the browser.
+
+Do not expose arbitrary server filesystem or process execution through SQL.
+
+Do not permit arbitrary role escalation or privilege grants through the default Workbench policy.
+
+## 23. ERROR HANDLING AND RECOVERY
+
+Create clear error states for:
+- PostgreSQL unavailable
+- Incorrect password
+- Missing database
+- Port conflict
+- API unavailable
+- Invalid SQL
+- Permission denied
+- Constraint violation
+- Duplicate flight number
+- Duplicate passenger email
+- Insufficient seats
+- Invalid booking
+- Query timeout
+- Query cancellation
+- SQL transaction failure
+- SSE/WebSocket disconnect
+- Schema metadata refresh failure
+- Failed CSV export
+
+Provide actionable messages without revealing secrets.
+
+The application must distinguish:
+- Frontend network error
+- Backend server error
+- PostgreSQL connection error
+- PostgreSQL statement error
+- Application validation error
+
+Provide Retry actions where appropriate.
+
+Do not replace actual database errors with fake success responses or silently switch to mock data.
+
+## 24. PROJECT STRUCTURE
+
+Use a maintainable structure similar to:
+
+airline-reservation-system/
+  frontend/
+    src/
+      app/
+      components/
+      components/ui/
+      features/
+        flights/
+        passengers/
+        bookings/
+        dashboard/
+        sql-workbench/
+        schema-explorer/
+        query-history/
+        audit/
+      hooks/
+      layouts/
+      pages/
+      services/
+      styles/
+      utils/
+      App.jsx
+      main.jsx
+    public/
+    package.json
+    .env.example
+  backend/
+    src/
+      config/
+        db.js
+      middleware/
+      routes/
+      controllers/
+      services/
+      repositories/
+      validators/
+      events/
+      security/
+      utils/
+      app.js
+      server.js
+    migrations/
+    scripts/
+    tests/
+    package.json
+    .env.example
+  docs/
+    architecture.md
+    database.md
+    sql-workbench-security.md
+    testing.md
+  README.md
+  .gitignore
+
+Adapt the structure to the existing repository where appropriate. Avoid unnecessary abstractions and do not create empty placeholder files simply to imitate this tree.
+
+Keep SQL queries out of React components.
+
+Keep business rules out of presentation components.
+
+Keep administrative SQL execution separate from ordinary application repositories and CRUD services.
+
+## 25. ENVIRONMENT CONFIGURATION
+
+Create backend/.env.example containing placeholders:
+
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=airline_reservation
+PGUSER=postgres
+PGPASSWORD=REPLACE_LOCALLY
+PORT=5000
+CLIENT_ORIGIN=http://localhost:5173
+SESSION_SECRET=REPLACE_WITH_A_LONG_RANDOM_SECRET
+ADMIN_BOOTSTRAP_MODE=false
+
+Adapt names as necessary, but ensure secrets are server-only.
+
+The frontend must not receive PostgreSQL credentials or session secrets.
+
+Use .gitignore to exclude:
+- .env
+- .env.local
+- .env.*.local
+- node_modules
+- build output
+- generated logs
+- temporary result exports
+- local secrets
+- test artifacts that should not be committed
+
+Create a frontend environment example only for safe public configuration, such as a development API base URL.
+
+Validate required environment variables at backend startup. Fail clearly if required settings are missing.
+
+Do not print secret values in startup logs.
+
+## 26. DATABASE MIGRATIONS
+
+Create versioned migration SQL files and a migration runner.
+
+The runner must:
+- Connect only to the configured existing database.
+- Confirm the expected database identity before executing migrations.
+- Use a migration tracking table.
+- Avoid executing completed migrations twice.
+- Use transactions where PostgreSQL permits.
+- Check existing objects and columns.
+- Avoid destructive schema changes.
+- Detect conflicts.
+- Preserve sample data.
+- Log each migration result.
+- Fail safely when an unexpected schema is encountered.
+
+Before running migrations, provide a readable summary of intended changes.
+
+If an operation would destroy data or cannot be safely automated, stop and request explicit human intervention rather than proceeding.
+
+Do not automatically create a new airline_reservation database if the existing database is missing. Report the error and explain how the owner can verify the connection.
+
+## 27. TESTING STRATEGY
+
+Create meaningful automated tests and a manual verification checklist.
+
+Backend tests should cover:
+- Environment validation
+- Database health
+- Query validation
+- SQL Workbench authorization
+- Read-only query enforcement
+- Mutation authorization
+- SQL timeout handling
+- Row-limit handling
+- SQL error sanitization
+- Query history access controls
+- Event publication after successful commit
+- No event falsely claiming a failed transaction succeeded
+- Booking transaction correctness
+- Concurrent booking attempts
+- Seat availability correctness
+- Cancellation idempotency
+- Database migration idempotency
+
+Frontend tests should cover:
+- SQL editor rendering
+- Run Query interactions
+- Loading states
+- Results grid
+- SQL error display
+- Successful mutation notifications
+- Query history
+- Schema explorer
+- Live invalidation
+- Reconnection handling
+- Dashboard refresh
+- Flight and booking CRUD flows
+- Responsive layout
+- Accessible keyboard interactions
+
+Test against a dedicated test database or controlled test fixtures when necessary. Do not delete or reset the owner's existing data for tests.
+
+Use mocks only for isolated unit tests where appropriate. End-to-end database behavior must be verified against a real PostgreSQL instance when available.
+
+Never claim tests passed if they were not executed.
+
+Report:
+- Tests executed
+- Tests passed
+- Tests failed
+- Tests blocked by environmental limitations
+- Manual verification still required
+
+## 28. DOCUMENTATION
+
+Produce a detailed README suitable for a technically capable developer who wants reliable, reproducible local execution.
+
+Include:
+- Architecture overview
+- Technology stack
+- Repository structure
+- Database schema
+- Existing database preservation strategy
+- Environment setup
+- PostgreSQL configuration
+- Migration workflow
+- Least-privilege role recommendations
+- Backend setup
+- Frontend setup
+- Authentication bootstrap
+- SQL Workbench usage
+- Query classification and execution policy
+- Transaction behavior
+- Schema Explorer usage
+- Live synchronization design
+- API endpoint reference
+- Testing
+- Troubleshooting
+- Known limitations
+- Security limitations of email-based booking lookup
+- Development and production configuration differences
+
+Explain Windows commands accurately.
+
+Typical backend workflow:
+
+cd backend
+npm install
+npm run migrate
+npm run dev
+
+Typical frontend workflow:
+
+cd frontend
+npm install
+npm run dev
+
+Use separate terminals when required.
+
+Do not invent commands that are absent from package.json.
+
+Explain how to create backend/.env from backend/.env.example and enter the password locally.
+
+Do not ask the project owner to share secrets.
+
+## 29. IMPLEMENTATION WORKFLOW
+
+Follow this order:
+
+Phase 1 — Repository discovery
+- Inspect files and package manifests.
+- Identify existing application code.
+- Identify the current frontend and backend frameworks.
+- Identify existing API routes and database configuration.
+- Preserve working code.
+
+Phase 2 — Database inspection
+- Verify the target database identity.
+- Inspect the existing tables, columns, constraints, indexes, sequences, and relationships.
+- Compare the real schema with the expected schema.
+- Report differences before applying migrations.
+
+Phase 3 — Safe database foundation
+- Implement migration tracking.
+- Add only necessary schema changes.
+- Add available_seats if missing.
+- Calculate initial availability without resetting it on every startup.
+- Create required indexes and constraints only when compatible with existing data.
+- Verify that existing records remain intact.
+
+Phase 4 — Backend foundation
+- Implement the connection pool.
+- Add startup health checks.
+- Implement error handling and validation.
+- Build the public flight and booking APIs.
+- Build transaction-safe booking and cancellation.
+
+Phase 5 — Administrative security
+- Implement authentication and authorization.
+- Configure database roles and query permissions.
+- Add audit logging.
+- Ensure privileged routes remain inaccessible to public users.
+
+Phase 6 — SQL Workbench
+- Build the editor.
+- Implement server-side SQL execution.
+- Implement query classification and policy enforcement.
+- Implement results grid.
+- Implement schema explorer.
+- Implement history and saved queries.
+- Implement transactions and timeouts within the supported policy.
+- Test actual PostgreSQL execution when available.
+
+Phase 7 — Synchronization
+- Implement post-commit events.
+- Connect the frontend to the event stream.
+- Implement cache invalidation.
+- Implement external-change detection and reconciliation.
+- Verify synchronization after SQL updates and inserts.
+
+Phase 8 — Frontend
+- Build the design system.
+- Implement the public booking journey.
+- Implement administration pages.
+- Connect all data views to real APIs.
+- Add loading, empty, success, and failure states.
+
+Phase 9 — Verification
+- Run linting and build checks.
+- Run automated tests.
+- Verify API contracts.
+- Verify SQL Workbench permissions.
+- Verify booking concurrency behavior.
+- Verify event and cache invalidation.
+- Fix discovered issues.
+- Document anything that could not be tested.
+
+Phase 10 — Final handoff
+- Provide the complete implementation.
+- Summarize architectural decisions.
+- List files changed or created.
+- Provide commands to run the project.
+- Explain migrations and environment variables.
+- Provide a verification checklist.
+- Explicitly disclose remaining limitations.
+
+Do not skip a phase merely to make the result appear complete.
+
+## 30. ACCEPTANCE CRITERIA
+
+The project is not complete until the following criteria have been addressed.
+
+A. DATABASE
+- Connects to the existing airline_reservation PostgreSQL database.
+- Does not recreate or drop existing tables.
+- Preserves existing sample records.
+- Uses migrations that can be safely tracked and rerun.
+- Keeps credentials outside the frontend.
+
+B. SQL WORKBENCH
+- Displays an actual SQL editor.
+- Executes authorized SQL against PostgreSQL through the backend.
+- Returns actual query results.
+- Displays row counts, affected rows, duration, and errors.
+- Supports safe read-only queries.
+- Supports authorized data mutations.
+- Protects schema-changing and destructive operations.
+- Implements query history and schema exploration.
+- Does not falsely report success.
+- Does not depend on a client-side keyword check as the sole security measure.
+
+C. LIVE SYNCHRONIZATION
+- SQL changes made through the Workbench refresh affected frontend data.
+- External database changes are eventually detected through a documented mechanism.
+- Failed or rolled-back operations do not generate false committed-change events.
+- Disconnected clients recover through reconnection and reconciliation.
+- Notifications do not expose sensitive row contents.
+
+D. BOOKING
+- Flight search uses PostgreSQL.
+- Booking transactions prevent overbooking.
+- Prices are calculated on the backend.
+- Cancellation restores seats exactly once.
+- Existing bookings remain intact.
+
+E. ADMINISTRATION
+- Administrative APIs require authorization.
+- Passenger and booking records are access-controlled.
+- Dashboard metrics are database-derived.
+- Sensitive operations are auditable.
+
+F. QUALITY
+- The interface is visually polished and responsive.
+- Forms and tables have useful loading, empty, and error states.
+- No visible button is knowingly inert.
+- No mock data is presented as live database data.
+- The project builds successfully in the available environment.
+- Tests and limitations are reported honestly.
+- Setup documentation is complete.
+
+## 31. FINAL EXECUTION DIRECTIVE
+
+Start by inspecting the actual project files and environment. Do not immediately replace the repository with a newly generated template.
+
+Then implement the complete system in the available environment.
+
+When an actual database connection is available, inspect the schema and test it. When local database access is not available, implement the connection and migration workflow without pretending to have accessed it.
+
+Prefer correct, maintainable, verifiable implementation over impressive-looking but nonfunctional output.
+
+Do not omit the SQL Workbench. It is a first-class feature of the application, not an optional future enhancement.
+
+Do not omit the real-time frontend synchronization behavior.
+
+Do not create fake database results.
+
+Do not sacrifice security to make arbitrary SQL execution easier.
+
+Do not destroy existing data.
+
+Do not leave core features as TODO comments or unimplemented placeholders.
+
+If a requirement conflicts with PostgreSQL semantics, security, or reliable transaction behavior, explain the conflict and implement the safest correct alternative.
+
+Deliver a cohesive, technically credible, polished Airline Reservation System with a genuinely integrated PostgreSQL SQL Workbench, robust database behavior, live frontend synchronization, clear operational controls, and reproducible setup instructions.
